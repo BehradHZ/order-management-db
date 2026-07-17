@@ -124,7 +124,7 @@
 *   **Notation Style:** Identifying Relationship (**Double Diamond**). Arrow pointing towards `Customer`.
 
 ### 🔗 Offers (1:N)
-*   **Entities:** `Seller` (1, 1) ─── `Product` (0, *)
+*   **Entities:** `Seller` (1, 1) ─── `Product` (1, *)
 *   **Participation:** Both sides are **Partial**
 *   **Notation Style:** Arrow pointing towards `Seller`, straight line to `Product`.
 
