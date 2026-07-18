@@ -219,3 +219,91 @@ INSERT INTO Shipment (shipment_tracking_code, time, status, order_id) VALUES
 ('POST-EEE555', '2026-07-15 11:00:00', 'Returned', 8),
 ('POST-FFF666', '2026-07-15 19:00:00', 'Delivered', 10),
 ('POST-GGG777', '2026-07-18 11:30:00', 'Preparing', 11);
+
+------------------------------------------------------------------------------------
+
+-- پرس و جوی یکم
+-- نمایش اطلاعات تمام سفارش های متعلق به یک مشتری مشخص
+
+SELECT 
+    order_id, 
+    order_status, 
+    order_date, 
+    total_amount, 
+    shipping_cost, 
+    discount, 
+    customer_postal_code, 
+    promo_code
+FROM "Order"
+WHERE customer_id = 1
+ORDER BY order_date DESC;
+
+-- پرس و جوی دوم
+-- نمایش ۵ سفارش اخیر یک مشتری بر اساس تاریخ ثبت سفارش
+
+SELECT 
+    order_id, 
+    order_status, 
+    order_date, 
+    total_amount
+FROM "Order"
+WHERE customer_id = 1
+ORDER BY order_date DESC
+LIMIT 5;
+
+-- پرس و جوی سوم
+-- نمایش محصولاتی که موجودی آن‌ها کمتر از حد هشدار تعریف شده است
+
+SELECT 
+    p.product_id, 
+    p.name AS product_name, 
+    i.stock_quantity, 
+    i.alert_threshold,
+    s.brand_name AS seller_brand
+FROM Product p
+JOIN Inventory_Stock i ON p.product_id = i.product_id
+JOIN Seller s ON p.seller_id = s.seller_id
+WHERE i.stock_quantity < i.alert_threshold;
+
+-- پرس و جوی چهارم
+-- نمایش فروشندگانی که در ماه اخیر بیش از یک مقدار مشخص فروش داشته اند
+
+SELECT 
+    s.seller_id, 
+    s.brand_name, 
+    s.email,
+    SUM(oi.quantity * oi.unit_price) AS total_sales_amount
+FROM Seller s
+JOIN Product p ON s.seller_id = p.seller_id
+JOIN Order_Item oi ON p.product_id = oi.product_id
+JOIN "Order" o ON oi.order_id = o.order_id
+WHERE o.order_date >= NOW() - INTERVAL '30 days'
+  AND o.order_status IN ('Processing', 'Shipped', 'Delivered') -- در نظر گرفتن سفارشات معتبر و نهایی شده
+GROUP BY s.seller_id, s.brand_name, s.email
+HAVING SUM(oi.quantity * oi.unit_price) > 500.00;
+
+-- پرس و جوی پنجم
+-- نمایش سفارش هایی که پرداخت ناموفق یا در انتظار پرداخت دارند
+
+SELECT DISTINCT
+    o.order_id, 
+    o.order_status, 
+    o.order_date, 
+    o.total_amount, 
+    o.customer_id,
+    p.payment_status,
+    p.payment_method
+FROM "Order" o
+JOIN Payment p ON o.order_id = p.order_id
+WHERE p.payment_status IN ('Failed', 'Pending')
+ORDER BY o.order_date DESC;
+
+-- پرس و جوی ششم
+-- نمایش تعداد سفارش های انجام شده در یک بازه زمانی مشخص (یک هفته گذشته)
+
+SELECT 
+    COUNT(order_id) AS total_orders_count,
+    COALESCE(SUM(total_amount), 0) AS total_revenue
+FROM "Order"
+WHERE order_date >= NOW() - INTERVAL '7 days'
+  AND order_status != 'Cancelled';
